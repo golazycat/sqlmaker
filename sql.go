@@ -105,7 +105,8 @@ func (maker *SqlMaker) Make() (string, error) {
 			sql = append(sql, maker.maker.MakeWhere(maker.cond))
 		case "delete":
 			sql = append(sql, maker.maker.MakeDelete())
-
+		case "select":
+			sql = append(sql, maker.maker.MakeSelect(maker.isCount))
 		}
 	}
 

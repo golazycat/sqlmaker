@@ -34,8 +34,40 @@ var user = User{
 
 func TestInsert(t *testing.T) {
 
+	sql := NewInsertMaker(user).BuildMake()
+	fmt.Println(sql)
+
+	sql = NewInsertMaker(user).Beauty().BuildMake()
+	fmt.Println(sql)
+
+	sql = NewInsertMaker(user).Beauty().Filter("id", "name", "age").BuildMake()
+	fmt.Println(sql)
+
 	fmt.Println(NewInsertMaker(user).Beauty().BuildMake())
 	fmt.Println(NewInsertMaker(user).BuildMake())
+}
+
+func TestUpdate(t *testing.T) {
+
+	user.Status = 3
+	cond := NewCond().Lt("age", 80).And().NotEq("status", 3)
+	sql := NewUpdateMaker(user).Cond(cond).Filter("status").Beauty().BuildMake()
+	fmt.Println(sql)
+
+	sql = NewUpdateMaker(user).ByID().Filter("name").Beauty().BuildMake()
+	fmt.Println(sql)
+
+	cond = NewCond().Eq("name", "mike").AndAll().
+		StEq("age", 20).Or().Eq("phone", 110)
+	sql = NewDeleteMaker(user).Cond(cond).Beauty().BuildMake()
+	fmt.Println(sql)
+
+	cond = NewCond().Lt("age", 50)
+	sql = NewSearchMaker(user).Cond(cond).Count().Beauty().BuildMake()
+	fmt.Println(sql)
+
+	sql = NewSearchMaker(user).Filter("name").Beauty().BuildMake()
+	fmt.Println(sql)
 }
 
 func TestCond(t *testing.T) {
@@ -53,14 +85,4 @@ func TestCond(t *testing.T) {
 		Eq("status", 1).Or().Eq("age", 23).EndAll().Or().
 		Lt("age", 56)
 	fmt.Println(cond.Make())
-}
-
-func TestUpdate(t *testing.T) {
-
-	// 根据年龄更新
-	cond := NewCond().Eq("age", 20)
-	fmt.Println(NewUpdateMaker(user).Cond(cond).Beauty().BuildMake())
-
-	// 直接根据ID更新
-	fmt.Println(NewUpdateMaker(user).ByID().Beauty().Filter("name", "phone", "age").BuildMake())
 }
