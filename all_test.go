@@ -12,6 +12,7 @@ type User struct {
 	Age        int       `field:"age"`
 	Phone      string    `field:"phone"`
 	CreateDate time.Time `field:"create_date"`
+	Status     int       `field:"status"`
 }
 
 func (t User) GetId() (string, interface{}) {
@@ -28,12 +29,13 @@ var user = User{
 	Age:        23,
 	Phone:      "7891234",
 	CreateDate: time.Now(),
+	Status:     2,
 }
 
 func TestInsert(t *testing.T) {
 
 	fmt.Println(NewInsertMaker(user).Beauty().BuildMake())
-	fmt.Println(NewInsertMaker(user).Filter("phone", "Name", "age").BuildMake())
+	fmt.Println(NewInsertMaker(user).BuildMake())
 }
 
 func TestCond(t *testing.T) {
@@ -44,6 +46,12 @@ func TestCond(t *testing.T) {
 	fmt.Println(cond.Make())
 
 	cond = NewCond().Lt("age", 23).OrAll().Eq("name", "asd").And()
+	fmt.Println(cond.Make())
+
+	cond = NewCond().
+		Eq("name", "Tang").AndAll().
+		Eq("status", 1).Or().Eq("age", 23).EndAll().Or().
+		Lt("age", 56)
 	fmt.Println(cond.Make())
 }
 
