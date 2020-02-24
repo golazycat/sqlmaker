@@ -13,7 +13,7 @@ const (
 	_VALUES = "VALUES(%s)"
 	_SELECT = "SELECT %s"
 	_WHERE  = "WHERE %s"
-	_UPDATE = "UPDATE FROM %s"
+	_UPDATE = "UPDATE %s"
 	_SET    = "SET %s"
 	_DELETE = "DELETE FROM %s"
 	_LIMIT  = "LIMIT %s"
@@ -26,6 +26,7 @@ type StatMaker struct {
 	filter    []string
 	built     bool
 	tableName string
+	prepare   bool
 }
 
 // 创建一个SQL子句生成器，需要传入entity表示这个生成器是针对哪个实体的
@@ -35,6 +36,7 @@ func NewStatMaker(entity Entity) StatMaker {
 		entity:    entity,
 		built:     false,
 		tableName: entity.TableName(),
+		prepare:   true,
 	}
 }
 
@@ -51,6 +53,10 @@ func (maker *StatMaker) Build() {
 // Make前调用该函数，传入希望输出的字段名称
 func (maker *StatMaker) Filter(filter []string) {
 	maker.filter = filter
+}
+
+func (maker *StatMaker) Prepare(prepare bool) {
+	maker.prepare = prepare
 }
 
 // 生成FROM子句，需要用到表名
@@ -111,19 +117,52 @@ func (maker *StatMaker) MakeLimit(limit, offset int) string {
 	}
 }
 
+func (maker *StatMaker) GetValues() []interface{} {
+	ret := make([]interface{}, 0)
+	for _, field := range maker.fields {
+		ret = append(ret, field.originVal)
+	}
+	return ret
+}
+
+func (maker *StatMaker) GetNames() []string {
+	ret := make([]string, 0)
+	for _, field := range maker.fields {
+		ret = append(ret, field.Name)
+	}
+	return ret
+}
+
 // 生成字段的"fieldName=value"表达式
 func (maker *StatMaker) makeEquals() string {
-	return maker.makeStat(func(field Field) string {
-		return fmt.Sprintf("`%s`=%s",
-			field.TableFieldName, field.val)
-	})
+	var genFunc genStatFunc
+	if !maker.prepare {
+		genFunc = func(field Field) string {
+			return fmt.Sprintf("`%s`=%s",
+				field.TableFieldName, field.val)
+		}
+	} else {
+		genFunc = func(field Field) string {
+			return fmt.Sprintf("`%s`=?",
+				field.TableFieldName)
+		}
+	}
+	return maker.makeStat(genFunc)
 }
 
 // 生成所有字段的值
 func (maker *StatMaker) makeValues() string {
-	return maker.makeStat(func(field Field) string {
-		return field.val
-	})
+	var genFunc genStatFunc
+	if !maker.prepare {
+		genFunc = func(field Field) string {
+			return field.val
+		}
+	} else {
+		genFunc = func(Field) string {
+			return "?"
+		}
+	}
+	return maker.makeStat(genFunc)
 }
 
 // 生成所有字段的名称

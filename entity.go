@@ -1,6 +1,7 @@
 package sqlmaker
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"time"
@@ -23,11 +24,13 @@ type Entity interface {
 // 字段结构体
 // Name: 字段在结构体中的名称
 // TableFieldName: 字段在数据表中的名称，需要通过字段标签"field"指定，如果不指定，则和Name一致
-// val: 字段的具体值
+// val: 字段的string值(如果是字符串，会加上单引号包裹)
+// originVal: 字段的真正具体值
 type Field struct {
 	Name           string
 	TableFieldName string
 	val            string
+	originVal      interface{}
 }
 
 // 将一个Entity的所有字段解析出来，返回一个field列表
@@ -66,12 +69,46 @@ func decodeEntity(o interface{}, selects []string) []Field {
 				Name:           field.Name,
 				TableFieldName: tag,
 				val:            val,
+				originVal:      originVal,
 			}
 			fields = append(fields, fieldObj)
 		}
 	}
 
 	return fields
+}
+
+// 为o的name属性设置val值
+func setValue(o interface{}, name string, val interface{}) {
+
+	var s string
+	switch val.(type) {
+	case int64:
+		s = fmt.Sprintf("%d", val)
+	default:
+		s = fmt.Sprintf("%s", val)
+	}
+
+	field := reflect.ValueOf(o).Elem().FieldByName(name)
+	var (
+		tv  interface{}
+		err error
+	)
+
+	switch field.Type().Name() {
+	case "Time":
+		tv, err = time.Parse(datetimeFormat, s)
+	case "int":
+		tv, err = strconv.Atoi(s)
+	default:
+		tv = s
+	}
+
+	if err != nil {
+		return
+	}
+
+	field.Set(reflect.ValueOf(tv))
 }
 
 func intToString(v int) string {

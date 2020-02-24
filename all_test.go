@@ -1,10 +1,26 @@
 package sqlmaker
 
 import (
+	"database/sql"
 	"fmt"
+	"os"
 	"testing"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
+
+var db *sql.DB
+
+func init() {
+	db, _ = sql.Open("mysql", "root:19971008@tcp(127.0.0.1:3306)/test?charset=utf8")
+	db.SetMaxOpenConns(1000)
+	err := db.Ping()
+	if err != nil {
+		fmt.Println("Failed to connect to mysql, err:" + err.Error())
+		os.Exit(1)
+	}
+}
 
 type User struct {
 	Id         int       `field:"id"`
@@ -24,65 +40,45 @@ func (t User) TableName() string {
 }
 
 var user = User{
-	Id:         1,
-	Name:       "John",
-	Age:        23,
-	Phone:      "7891234",
+	Id:         3,
+	Name:       "Mike",
+	Age:        18,
+	Phone:      "78231234",
 	CreateDate: time.Now(),
 	Status:     2,
 }
 
+func TestSet(t *testing.T) {
+	u := User{}
+	setValue(&u, "CreateDate", "2020-01-02 10:10:23")
+	fmt.Println(u)
+}
+
 func TestInsert(t *testing.T) {
 
-	sql := NewInsertMaker(user).BuildMake()
-	fmt.Println(sql)
+	maker := NewInsertMaker(user).SetDB(db)
 
-	sql = NewInsertMaker(user).Beauty().BuildMake()
-	fmt.Println(sql)
-
-	sql = NewInsertMaker(user).Beauty().Filter("id", "name", "age").BuildMake()
-	fmt.Println(sql)
-
-	fmt.Println(NewInsertMaker(user).Beauty().BuildMake())
-	fmt.Println(NewInsertMaker(user).BuildMake())
+	fmt.Println(maker.BuildMake())
+	affect, err := maker.Exec()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(affect)
 }
 
 func TestUpdate(t *testing.T) {
 
-	user.Status = 3
-	cond := NewCond().Lt("age", 80).And().NotEq("status", 3)
-	sql := NewUpdateMaker(user).Cond(cond).Filter("status").Beauty().BuildMake()
-	fmt.Println(sql)
+	user.Name = "Tang"
+	maker := NewUpdateMaker(user).ByID().SetDB(db).Filter("name", "age")
 
-	sql = NewUpdateMaker(user).ByID().Filter("name").Beauty().BuildMake()
-	fmt.Println(sql)
+	affect, err := maker.Exec()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(affect)
 
-	cond = NewCond().Eq("name", "mike").AndAll().
-		StEq("age", 20).Or().Eq("phone", 110)
-	sql = NewDeleteMaker(user).Cond(cond).Beauty().BuildMake()
-	fmt.Println(sql)
-
-	cond = NewCond().Lt("age", 50)
-	sql = NewSearchMaker(user).Cond(cond).Count().Page(1, 10).Beauty().BuildMake()
-	fmt.Println(sql)
-
-	sql = NewSearchMaker(user).Filter("name").Beauty().BuildMake()
-	fmt.Println(sql)
 }
 
-func TestCond(t *testing.T) {
-	cond := NewCond().Eq("age", 12).AndAll().Eq("c", "d").Or().Eq("name", "nihao")
-	fmt.Println(cond.Make())
+func TestQueryMany(t *testing.T) {
 
-	cond = NewCond().Lt("age", 23).OrAll().Eq("name", "asd").And().Eq("age", 14)
-	fmt.Println(cond.Make())
-
-	cond = NewCond().Lt("age", 23).OrAll().Eq("name", "asd").And()
-	fmt.Println(cond.Make())
-
-	cond = NewCond().
-		Eq("name", "Tang").AndAll().
-		Eq("status", 1).Or().Eq("age", 23).EndAll().Or().
-		Lt("age", 56)
-	fmt.Println(cond.Make())
 }
