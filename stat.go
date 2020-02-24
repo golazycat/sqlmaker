@@ -2,6 +2,7 @@ package sqlmaker
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -15,6 +16,7 @@ const (
 	_UPDATE = "UPDATE FROM %s"
 	_SET    = "SET %s"
 	_DELETE = "DELETE FROM %s"
+	_LIMIT  = "LIMIT %s"
 )
 
 // SQL子句生成器，用于根据Entity生成所有已知的SQL子句
@@ -97,6 +99,16 @@ func (maker *StatMaker) MakeSet() string {
 // 生成DELETE子句，需要用到表名
 func (maker *StatMaker) MakeDelete() string {
 	return fmt.Sprintf(_DELETE, maker.tableName)
+}
+
+// 生成LIMIT子句
+func (maker *StatMaker) MakeLimit(limit, offset int) string {
+	if offset == -1 {
+		return fmt.Sprintf(_LIMIT, strconv.Itoa(limit))
+	} else {
+		return fmt.Sprintf(_LIMIT, fmt.Sprintf(
+			"%d,%d", limit, offset))
+	}
 }
 
 // 生成字段的"fieldName=value"表达式

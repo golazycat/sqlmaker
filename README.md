@@ -12,7 +12,7 @@ $ go get github.com/golazycat/sqlmaker
 
 ## 使用
 
-需要生成SQL的结构体需要实现两个函数：`TableName() string`和`GetId() (string interface{})`。
+需要生成SQL的结构体需要实现两个函数：`TableName() string`和`GetId() (string, interface{})`。
 
 并且每个字段都需要增加`field`标签来标明该字段对应的数据表中的字段名称。
 

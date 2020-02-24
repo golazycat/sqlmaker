@@ -19,6 +19,8 @@ type SqlMaker struct {
 	isCount   bool
 	idName    string
 	idValue   interface{}
+	limit     int
+	offset    int
 }
 
 // 设置过滤字段名称。如果希望输出的SQL子句只包含entity的部分字段，需要在调用
@@ -76,6 +78,18 @@ func (maker *SqlMaker) Count() *SqlMaker {
 	return maker
 }
 
+// 设置查询的Limit参数
+func (maker *SqlMaker) Limit(limit, offset int) *SqlMaker {
+	maker.limit = limit
+	maker.offset = offset
+	return maker
+}
+
+// 分页
+func (maker *SqlMaker) Page(curPage, pageSize int) *SqlMaker {
+	return maker.Limit((curPage-1)*pageSize, pageSize)
+}
+
 // 生成SQL语句
 // 这会根据配置和解析的entity生成SQL语句，注意调用该函数前必须调用Build()函数
 // 否则会返回MakerNotBuildError错误
@@ -107,6 +121,13 @@ func (maker *SqlMaker) Make() (string, error) {
 			sql = append(sql, maker.maker.MakeDelete())
 		case "select":
 			sql = append(sql, maker.maker.MakeSelect(maker.isCount))
+		case "limit":
+			if maker.limit == -1 {
+				continue
+			}
+			sql = append(sql, maker.maker.MakeLimit(
+				maker.limit, maker.offset))
+
 		}
 	}
 
@@ -139,7 +160,7 @@ func NewDeleteMaker(e Entity) *SqlMaker {
 
 // 新建一个查询语句生成器
 func NewSearchMaker(e Entity) *SqlMaker {
-	return newSqlMaker(e, []string{"select", "from", "where"})
+	return newSqlMaker(e, []string{"select", "from", "where", "limit"})
 }
 
 func newSqlMaker(e Entity, statOrder []string) *SqlMaker {
@@ -152,6 +173,8 @@ func newSqlMaker(e Entity, statOrder []string) *SqlMaker {
 		built:     false,
 		idName:    stringName(idName),
 		idValue:   idValue,
+		limit:     -1,
+		offset:    -1,
 	}
 
 }

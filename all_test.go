@@ -63,7 +63,7 @@ func TestUpdate(t *testing.T) {
 	fmt.Println(sql)
 
 	cond = NewCond().Lt("age", 50)
-	sql = NewSearchMaker(user).Cond(cond).Count().Beauty().BuildMake()
+	sql = NewSearchMaker(user).Cond(cond).Count().Page(1, 10).Beauty().BuildMake()
 	fmt.Println(sql)
 
 	sql = NewSearchMaker(user).Filter("name").Beauty().BuildMake()
