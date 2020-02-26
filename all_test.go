@@ -48,14 +48,11 @@ var user = User{
 	Status:     2,
 }
 
-func TestSet(t *testing.T) {
-	u := User{}
-	setValue(&u, "CreateDate", "2020-01-02 10:10:23")
-	fmt.Println(u)
-}
-
 func TestInsert(t *testing.T) {
 
+	DebugMode()
+
+	user.Id = 5
 	maker := NewInsertMaker(user).SetDB(db)
 
 	fmt.Println(maker.BuildMake())
@@ -81,4 +78,58 @@ func TestUpdate(t *testing.T) {
 
 func TestQueryMany(t *testing.T) {
 
+	DebugMode()
+
+	// 查询全部
+	cond := NewPrepareCond().Like("name", "%T%")
+	maker := NewQueryMaker(user).SetDB(db).Cond(cond).Page(1, 10)
+	result, err := maker.ExecQueryMany()
+
+	if err != nil {
+		panic(err)
+	}
+
+	for result.Next() {
+		u := User{}
+		result.Decode(&u)
+		fmt.Println(u)
+	}
+
+	// 按照条件查询
+	cond = NewPrepareCond().Eq("name", "Tang").And().Eq("age", 18)
+	maker = NewQueryMaker(user).SetDB(db).Cond(cond)
+	result, err = maker.ExecQueryMany()
+	if err != nil {
+		panic(err)
+	}
+	for result.Next() {
+		u := User{}
+		result.Decode(&u)
+		fmt.Println(u)
+	}
+
+	// 查询单个数据
+	maker = NewQueryMaker(user).ByID().SetDB(db)
+	u := User{}
+	_ = maker.ExecQueryOne(&u)
+	fmt.Println("Query One: ", u)
+
+	// 统计个数
+	cond = NewPrepareCond().St("age", 23)
+	maker = NewQueryMaker(user).SetDB(db).Cond(cond)
+	cnt, _ := maker.ExecCount()
+	fmt.Println("count: ", cnt)
+
+}
+
+func TestOther(t *testing.T) {
+
+	i := 1
+	changeVal(&i)
+	fmt.Println(i)
+
+}
+
+func changeVal(o *int) {
+	*o = 12
 }

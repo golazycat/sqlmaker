@@ -54,6 +54,8 @@ func (maker *SqlMaker) Exec() (int64, error) {
 		result sql.Result
 		err    error
 	)
+	wLog("### Exec SQL: %s", _sql)
+
 	// prepare和non-prepare逻辑不同
 	if maker.IsPrepare() {
 		_, result, err = maker.execPrepare(_sql, false)
@@ -70,28 +72,32 @@ func (maker *SqlMaker) Exec() (int64, error) {
 
 // 执行查询多个数据SQL，返回的QueryResult对象可以迭代，通过迭代QueryResult
 // 来将查询结果转换为具体的entity。
-func (maker *SqlMaker) ExecSearchMany() (*QueryResult, error) {
-	return maker.execSearch(true, false, nil)
+func (maker *SqlMaker) ExecQueryMany() (*QueryResult, error) {
+	return maker.execQuery(true, false, nil, nil)
 }
 
 // 执行查询单个数据，确认SQL只会返回一个数据时调用该函数
 // 单个数据通过传入指针的方式赋值，确保o是一个指针
-func (maker *SqlMaker) ExecSearchOne(o interface{}) error {
+func (maker *SqlMaker) ExecQueryOne(o interface{}) error {
 
-	_, err := maker.execSearch(false, false, o)
+	_, err := maker.execQuery(false, false, o, nil)
 	return err
 }
 
 // 执行统计数据，如果SQL是统计的数据，返回的结果是一个整数，则可以调用该函数
 func (maker *SqlMaker) ExecCount() (int, error) {
 
+	if !maker.isCount {
+		maker.Count()
+	}
+
 	var cnt int
-	_, err := maker.execSearch(false, true, &cnt)
+	_, err := maker.execQuery(false, true, nil, &cnt)
 	return cnt, err
 }
 
 // 通过search函数，囊括了上述三种查询
-func (maker *SqlMaker) execSearch(many, count bool, o interface{}) (*QueryResult, error) {
+func (maker *SqlMaker) execQuery(many, count bool, o interface{}, i *int) (*QueryResult, error) {
 
 	if maker.db == nil {
 		return nil, DBNotSetError
@@ -102,6 +108,9 @@ func (maker *SqlMaker) execSearch(many, count bool, o interface{}) (*QueryResult
 		rows *sql.Rows
 		err  error
 	)
+
+	wLog("### Exec query sql: %s", _sql)
+
 	if maker.IsPrepare() {
 		rows, _, err = maker.execPrepare(_sql, true)
 	} else {
@@ -119,9 +128,7 @@ func (maker *SqlMaker) execSearch(many, count bool, o interface{}) (*QueryResult
 
 		// 统计，直接将结果赋值为int后返回
 		if count {
-			var cnt int
-			err = rows.Scan(&cnt)
-			o = cnt
+			err = rows.Scan(i)
 			return nil, err
 		}
 
@@ -162,6 +169,8 @@ func (maker *SqlMaker) execPrepare(_sql string, isQuery bool) (*sql.Rows, sql.Re
 		return nil, nil, err
 	}
 	defer safeClose(stmt)
+
+	wLog("### prepare values: %s", printValues(maker.Values()))
 
 	if isQuery {
 		rows, err := stmt.Query(maker.Values()...)

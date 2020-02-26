@@ -22,6 +22,7 @@ const (
 	_STEQ   = "%s<=%s {}"
 	_IN     = "%s IN (%s) {}"
 	_NOTIN  = "%s NOT IN (%s) {}"
+	_LIKE   = "%s LIKE %s"
 	_ENDALL = "endall"
 )
 
@@ -77,6 +78,12 @@ func (cond *Cond) And() *Cond {
 // 新增一个AND条件连接符和一对括号，接下来的条件都会在括号中
 func (cond *Cond) AndAll() *Cond {
 	cond.ops = append(cond.ops, _ANDALL)
+	return cond
+}
+
+// 新增一个LIKE条件
+func (cond *Cond) Like(k string, v interface{}) *Cond {
+	cond.ops = append(cond.ops, fmt.Sprintf(_LIKE, k, cond.getVal(v)))
 	return cond
 }
 
