@@ -8,15 +8,16 @@ import (
 
 // SQL子句格式，maker将会对%s进行替换
 const (
-	_FROM   = "FROM %s"
-	_INSERT = "INSERT INTO %s(%s)"
-	_VALUES = "VALUES(%s)"
-	_SELECT = "SELECT %s"
-	_WHERE  = "WHERE %s"
-	_UPDATE = "UPDATE %s"
-	_SET    = "SET %s"
-	_DELETE = "DELETE FROM %s"
-	_LIMIT  = "LIMIT %s"
+	_FROM    = "FROM %s"
+	_INSERT  = "INSERT INTO %s(%s)"
+	_VALUES  = "VALUES(%s)"
+	_SELECT  = "SELECT %s"
+	_WHERE   = "WHERE %s"
+	_UPDATE  = "UPDATE %s"
+	_SET     = "SET %s"
+	_DELETE  = "DELETE FROM %s"
+	_LIMIT   = "LIMIT %s"
+	_REPLACE = "REPLACE INTO %s(%s)"
 )
 
 // SQL子句生成器，用于根据Entity生成所有已知的SQL子句
@@ -67,6 +68,11 @@ func (maker *StatMaker) MakeFrom() string {
 // 生成INSERT子句，需要用到表名和字段名
 func (maker *StatMaker) MakeInsert() string {
 	return fmt.Sprintf(_INSERT, maker.tableName, maker.makeNames())
+}
+
+// 生成REPLACE子句，和INSERT一样
+func (maker *StatMaker) MakeReplace() string {
+	return fmt.Sprintf(_REPLACE, maker.tableName, maker.makeNames())
 }
 
 // 生成VALUES子句，需要用到字段值

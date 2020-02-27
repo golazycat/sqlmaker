@@ -203,6 +203,8 @@ func (maker *SqlMaker) Make() (string, error) {
 			_sql = append(_sql, maker.maker.MakeFrom())
 		case "insert":
 			_sql = append(_sql, maker.maker.MakeInsert())
+		case "replace":
+			_sql = append(_sql, maker.maker.MakeReplace())
 		case "values":
 			_sql = append(_sql, maker.maker.MakeValues())
 		case "update":
@@ -243,6 +245,11 @@ func (maker *SqlMaker) MustMake() string {
 // 新建一个新建SQL语句生成器
 func NewInsertMaker(e Entity) *SqlMaker {
 	return newSqlMaker(e, []string{"insert", "values"})
+}
+
+// 新建一个新建SQL语句生成器
+func NewReplaceMaker(e Entity) *SqlMaker {
+	return newSqlMaker(e, []string{"replace", "values"})
 }
 
 // 新建一个更新SQL语句生成器
