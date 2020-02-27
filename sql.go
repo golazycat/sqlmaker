@@ -8,7 +8,14 @@ import (
 )
 
 // 在使用SqlMaker的时候，如果在Make前没有Build，会返回这个错误
-var MakerNotBuildError = errors.New("maker not build")
+var (
+	MakerNotBuildError         = errors.New("maker not build")
+	defaultDB          *sql.DB = nil
+)
+
+func SetDefaultDB(db *sql.DB) {
+	defaultDB = db
+}
 
 // SqlMaker结构体，所有SQL语句都通过该结构体的函数生成
 // 另外在exec中实现了一键执行SQL，但是在调用exec的函数前

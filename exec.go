@@ -42,10 +42,20 @@ func (maker *SqlMaker) SetDB(db *sql.DB) *SqlMaker {
 	return maker
 }
 
+func (maker *SqlMaker) checkDB() bool {
+	if maker.db == nil {
+		if defaultDB == nil {
+			return false
+		}
+		maker.db = defaultDB
+	}
+	return true
+}
+
 // 执行SQL语句，返回执行影响的数据行数
 func (maker *SqlMaker) Exec() (int64, error) {
 
-	if maker.db == nil {
+	if !maker.checkDB() {
 		return 0, DBNotSetError
 	}
 
@@ -99,7 +109,7 @@ func (maker *SqlMaker) ExecCount() (int, error) {
 // 通过search函数，囊括了上述三种查询
 func (maker *SqlMaker) execQuery(many, count bool, o interface{}, i *int) (*QueryResult, error) {
 
-	if maker.db == nil {
+	if !maker.checkDB() {
 		return nil, DBNotSetError
 	}
 
